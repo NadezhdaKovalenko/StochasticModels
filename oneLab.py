@@ -91,8 +91,30 @@ def countHiSquare(dist, k, table, fileName, start, finish):
     return (np.around(np.sum(result), decimals=2))
 
 
-def drawData(data):
-    plt.hist(data, bins='auto')
+def drawData(data1, data2, k, name1, name2, value, hiNorm, hiUniform):
+    f, ax = plt.subplots(1, 2)
+    strNorm = str(name1) + ":\n" + str(round(hiNorm,2))
+    strUniform = str(name2) + ":\n" + str(round(hiUniform,2))
+    
+    if hiNorm > value:
+        strNorm += " > " + str(round(value,2))
+    elif hiNorm < value:
+        strNorm += " < " + str(round(value,2))
+    else: strNorm += " = " + str(round(value,2))
+
+    if hiUniform > value:
+        strUniform += " > " + str(round(value,2))
+    elif hiUniform < value:
+        strUniform += " < " + str(round(value,2))
+    else: strUniform += " = " + str(round(value,2))
+
+    ax[0].hist(data1, bins=k)
+    ax[1].hist(data2, bins=k)
+
+    ax[0].set_title(strNorm)
+    ax[1].set_title(strUniform)
+
+    f.tight_layout()
     plt.show()
 
 
@@ -117,5 +139,4 @@ hiNorm = countHiSquare(distNorm, k, True,'dataNorm.csv', start, finish)
 hiUniform = countHiSquare(distUniform, k, True, 'dataUniform.csv', start, finish)
 result = str(num)+": quantile = "+str(value)+" hiSquareNorm = "+str(hiNorm)+" hiSquareUniform = "+str(hiUniform)
 print(result)
-drawData(distNorm)
-drawData(distUniform)
+drawData(distNorm,distUniform,k,"Norm","Uniform", value, hiNorm, hiUniform)
