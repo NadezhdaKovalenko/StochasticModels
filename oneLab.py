@@ -4,7 +4,7 @@ from scipy.stats import norm
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
-
+import math
 
 def normalData(n, a, b):
     result = np.random.random(n)
@@ -17,7 +17,7 @@ def uniformData(n, a, b):
     return np.random.uniform(a, b, size=n)
 
 
-def printTable(q, delta, array, result, fileName):
+def printTable(q, delta, array, result, fileName, n):
     headersCsv = ['i', 'Delta_i','n_i', 'p_i', 'np_i', 'n_i-np_i', 'frac{(n_i-np_i)^2}{np_i}']
     rows = []
     strRows = []
@@ -34,16 +34,16 @@ def printTable(q, delta, array, result, fileName):
                     str(boarders),
                     str( q[i]),
                     str(np.around(array[i], decimals=4)),
-                    str(np.around(array[i] * 100, decimals = 2)),
-                    str(np.around(q[i] - 100 * array[i], decimals=2)),
+                    str(np.around(array[i] * n, decimals = 2)),
+                    str(np.around(q[i] - n * array[i], decimals=2)),
                     str(np.around(result[i], decimals=2))])
 
     rows.append([str(len(q)),
                 "-",
                 str(np.sum(q)),
                 str(np.around(np.sum(array), decimals=4)),
-                str(np.around(np.sum(array * 100), decimals=2)),
-                str(-np.around(np.sum(q - 100 * array), decimals=2)),
+                str(np.around(np.sum(array * n), decimals=2)),
+                str(-np.around(np.sum(q - n * array), decimals=2)),
                 str(np.around(np.sum(result), decimals=2))])
 
 
@@ -75,8 +75,8 @@ def printParameters(data):
     " sigma = " + str(np.around(np.std(data), decimals=2)))
 
 
-def countHiSquare(dist, k, table, fileName, start, finish):
-    delta = np.linspace(start, finish, num=k-1)
+def countHiSquare(dist, k, table, fileName, start, finish, n):
+    delta = np.linspace(start, finish, num=k)
     array = np.array([stats.norm.cdf(delta[0])])
     q = np.array([len(dist[dist <= delta[0]])])
     for i in range(0, len(delta) - 1):
@@ -85,13 +85,15 @@ def countHiSquare(dist, k, table, fileName, start, finish):
         q = np.append(q, len(dist[(dist <= delta[i + 1]) & (dist >= delta[i])]))
     array = np.append(array, 1 - stats.norm.cdf(delta[-1]))
     q = np.append(q, len(dist[dist >= delta[-1]]))
-    result = np.divide(np.multiply((q - 100 * array), (q - 100 * array)), array * 100)    
+    result = np.divide(np.multiply((q - n * array), (q - n * array)), array * n)    
     if table == True:
-        printTable(q, delta, array, result, fileName)
+        printTable(q, delta, array, result, fileName, n)
     return (np.around(np.sum(result), decimals=2))
 
 
 def drawData(data1, data2, k, name1, name2, value, hiNorm, hiUniform):
+    interval1 = 1 + math.floor(math.log2(len(data1)))
+    interval2 = 1 + math.floor(math.log2(len(data2)))
     f, ax = plt.subplots(1, 2)
     strNorm = str(name1) + ":\n" + str(round(hiNorm,2))
     strUniform = str(name2) + ":\n" + str(round(hiUniform,2))
@@ -108,8 +110,8 @@ def drawData(data1, data2, k, name1, name2, value, hiNorm, hiUniform):
         strUniform += " < " + str(round(value,2))
     else: strUniform += " = " + str(round(value,2))
 
-    ax[0].hist(data1, bins=k)
-    ax[1].hist(data2, bins=k)
+    ax[0].hist(data1, bins=interval1)
+    ax[1].hist(data2, bins=interval2)
 
     ax[0].set_title(strNorm)
     ax[1].set_title(strUniform)
@@ -121,22 +123,21 @@ def drawData(data1, data2, k, name1, name2, value, hiNorm, hiUniform):
 ############################################################################
 alpha = 0.05
 p = 1 - alpha
-k = 501
+k = 6
 
 start = -2
 finish = 2
 
-num = 75
+num = 150
 
 print("--------------------------------------------------")
-
 
 distNorm = normalData(num, start, finish)
 distUniform = uniformData(num, start, finish)
 
-value = stats.chi2.ppf(p, k-1)
-hiNorm = countHiSquare(distNorm, k, True,'dataNorm.csv', start, finish)
-hiUniform = countHiSquare(distUniform, k, True, 'dataUniform.csv', start, finish)
-result = str(num)+": quantile = "+str(value)+" hiSquareNorm = "+str(hiNorm)+" hiSquareUniform = "+str(hiUniform)
+value = stats.chi2.ppf(p, k-3)
+hiNorm = countHiSquare(distNorm, k-3, True,'dataNorm.csv', start, finish, num)
+hiUniform = countHiSquare(distUniform, k-3, True, 'dataUniform.csv', start, finish, num)
+result = str(num) + ": quantile = " + str(value) + " hiSquareNorm = " + str(hiNorm) + " hiSquareUniform = " + str(hiUniform)
 print(result)
-drawData(distNorm,distUniform,k,"Norm","Uniform", value, hiNorm, hiUniform)
+drawData(distNorm, distUniform, k, "Norm", "Uniform", value, hiNorm, hiUniform)
